@@ -21,8 +21,9 @@ class JobParser:
         raw_jobs = response.css('.storylink::text').getall()
 
         for job_id, raw_job in zip(job_ids, raw_jobs):
-            if (job_id, ) in self.job_ids:
+            if int(job_id) in self.job_ids:
                 continue
+
             job = JobItem()
             job['job_id'] = self.clean(job_id)
             job['name'] = self.get_company_name(raw_job)
@@ -33,9 +34,6 @@ class JobParser:
             yield job
 
         self.job_helper.insert(new_jobs)
-
-        urls_s = response.css('.morelink')
-        yield from [response.follow(url_s, callback=self.parse) for url_s in urls_s]
 
     def get_company_name(self, raw_job):
         return self.clean(re.search(self.RE_NAME, raw_job, flags=re.I).groups(''))
@@ -70,10 +68,9 @@ class JobsSpider(CrawlSpider):
     ]
 
     rules = [
-        Rule(LinkExtractor(restrict_css='.morelink')),
+        Rule(LinkExtractor(restrict_css='.morelink'), callback='parse'),
     ]
 
     def parse(self, response):
         yield from super().parse(response)
-
-        return self.job_parser.parse(response)
+        yield from self.job_parser.parse(response)

@@ -3,13 +3,15 @@ from mysql.connector import Error
 
 
 class JobHelper:
-
     def open_db_conn(self):
         try:
-            return connect(host='localhost', user='root',
+            conn = connect(host='localhost', user='root',
                            password='admin', database='jobs')
-        except Error:
-            print(Error)
+            # if conn.is_connected():
+            #     print("Connected With Database")
+            return conn
+        except Error as err:
+            print(err)
 
     def close_db_conn(self, conn, cursor):
         if conn.is_connected():
@@ -27,7 +29,7 @@ class JobHelper:
                 for job in jobs:
                     cursor.execute(sql, tuple(job.values()))
 
-            conn.commit()
+                conn.commit()
         except Error as error:
             print(error)
 
@@ -40,7 +42,7 @@ class JobHelper:
         try:
             cursor.execute('SELECT job_id from new_jobs')
             ids = cursor.fetchall()
-            return ids
+            return [r[0] for r in ids if r]
 
         except Error:
             print(Error)
